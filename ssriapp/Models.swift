@@ -9,6 +9,25 @@ import SwiftData
 import Foundation
 import SwiftDate
 
+//weekdays structure is a bitwise OptionSet
+//7 slots that can be turned on and off
+struct Weekdays: OptionSet {
+    let rawValue: Int
+    
+    static let sunday    = Weekdays(rawValue: 1)
+    static let monday    = Weekdays(rawValue: 2)
+    static let tuesday   = Weekdays(rawValue: 4)
+    static let wednesday = Weekdays(rawValue: 8)
+    static let thursday  = Weekdays(rawValue: 16)
+    static let friday    = Weekdays(rawValue: 32)
+    static let saturday  = Weekdays(rawValue: 64)
+    
+    static let weekdays: Weekdays = [.monday, .tuesday, .wednesday, .thursday, .friday]
+    static let weekend:  Weekdays = [.saturday, .sunday]
+    static let everyDay: Weekdays = [.weekdays, .weekend]
+    
+}
+
 //medication model
 //meds have a name and days of the week they should be taken on
 //this app is only really targeted at me right now and i only take one type of med
