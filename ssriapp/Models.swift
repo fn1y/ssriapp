@@ -8,10 +8,11 @@
 import SwiftData
 import Foundation
 import SwiftDate
+import Playgrounds
 
 //weekdays structure is a bitwise OptionSet
 //7 slots that can be turned on and off
-struct Weekdays: OptionSet {
+struct Weekdays: OptionSet, Codable {
     let rawValue: Int
     
     static let sunday    = Weekdays(rawValue: 1)
@@ -22,10 +23,6 @@ struct Weekdays: OptionSet {
     static let friday    = Weekdays(rawValue: 32)
     static let saturday  = Weekdays(rawValue: 64)
     
-    static let weekdays: Weekdays = [.monday, .tuesday, .wednesday, .thursday, .friday]
-    static let weekend:  Weekdays = [.saturday, .sunday]
-    static let everyDay: Weekdays = [.weekdays, .weekend]
-    
 }
 
 //medication model
@@ -35,11 +32,28 @@ struct Weekdays: OptionSet {
 @Model
 class Medication{
     var name: String
-    var daysOfWeek: [Int]
+    var daysOfWeek: Weekdays
     
-    init(name: String, daysOfWeek: [Int]) {
+    init(name: String, daysOfWeek: Weekdays) {
         self.name = name
         self.daysOfWeek = daysOfWeek
+    }
+    
+    @MainActor func isDueToday() -> Bool{
+        var returnBool = false
+        let todaysDate = Date.now
+
+        let weekdayBits = Weekdays(rawValue: 1 << (todaysDate.weekday - 1))
+        
+        //you can convert to weekday rawvalue to check its okay...
+        
+        if self.daysOfWeek.contains(weekdayBits){
+            returnBool = true
+        } else {
+            returnBool = false
+        }
+        
+        return returnBool
     }
 }
 
@@ -57,5 +71,19 @@ class log{
         self.medication = medication
         self.dose = dose
         self.date = date
+    }
+}
+
+
+
+#Playground {
+    var evilPills = Medication(name: "Evil Pills", daysOfWeek: [.monday,.tuesday])
+    
+    //you can convert to weekday rawvalue to check its okay...
+    
+    if evilPills.isDueToday(){
+        print("pills should be taken today")
+    } else {
+        print("no pills today")
     }
 }
