@@ -60,7 +60,7 @@ class Medication{
 //log model for each diary entry
 //each log has a medication, a dosage, and a time and date.
 @Model
-class log{
+class TakeLog{
     var medication: Medication
     var dose: Int
     var date: Date
@@ -72,6 +72,14 @@ class log{
         self.dose = dose
         self.date = date
     }
+}
+
+//SWIFTDATA FUNCTIONS 😄
+
+//modelContext only exists in views via @Environment, so it has to be passed in
+func createMedication(modelContext: ModelContext){
+    let med = Medication(name: "Untitled Medication", daysOfWeek: [.monday])
+    modelContext.insert(med)
 }
 
 
