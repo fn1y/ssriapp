@@ -6,16 +6,52 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MedEditView: View {
+    //view will expect a Medication object
+    //Bindable means any changes user makes in the ui get passed through and saved immediately
+    @Bindable var medication: Medication
+    
+    //Weekdays is a struct that can be used everywhere now
+    //let weekdayItems equal a list of sets, one string for the ui, and the actual Weekdays option it corresponds to
+    private let weekdayItems: [(label: String, option: Weekdays)] = [
+        ("Sunday", .sunday),
+        ("Monday", .monday),
+        ("Tuesday", .tuesday),
+        ("Wednesday", .wednesday),
+        ("Thursday", .thursday),
+        ("Friday", .friday),
+        ("Saturday", .saturday)
+    ]
+    
     var body: some View {
-        Form{
-            Text("This is the edit page")
-            TextField(/*@START_MENU_TOKEN@*/"Placeholder"/*@END_MENU_TOKEN@*/, text: /*@START_MENU_TOKEN@*//*@PLACEHOLDER=Value@*/.constant("")/*@END_MENU_TOKEN@*/)
+        NavigationStack{
+            Form {
+                Section("Name") {
+                    TextField("Medication name", text: $medication.name)
+                }
+                Section("Schedule") {
+                    //for each 
+                    ForEach(weekdayItems, id: \.label) { item in
+                        Toggle(item.label, isOn: Binding(
+                            get: { medication.daysOfWeek.contains(item.option) },
+                            set: { isOn in
+                                if isOn {
+                                    medication.daysOfWeek.insert(item.option)
+                                } else {
+                                    medication.daysOfWeek.remove(item.option)
+                                }
+                            }
+                        ))
+                    }
+                }
+            }
         }
     }
 }
 
 #Preview {
-    MedEditView()
+    MedEditView(medication: Medication(name: "Example Med", daysOfWeek: [.monday, .wednesday, .friday]))
+        .modelContainer(for: [Medication.self, TakeLog.self], inMemory: true)
 }

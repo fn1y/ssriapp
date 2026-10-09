@@ -76,22 +76,17 @@ class TakeLog{
 
 //SWIFTDATA FUNCTIONS 😄
 
-//modelContext only exists in views via @Environment, so it has to be passed in
-func createMedication(modelContext: ModelContext){
-    let med = Medication(name: "Untitled Medication", daysOfWeek: [.monday])
-    modelContext.insert(med)
-}
 
 
+//#Playground {
+//    var evilPills = Medication(name: "Evil Pills", daysOfWeek: [.monday,.tuesday])
+//    
+//    //you can convert to weekday rawvalue to check its okay...
+//    
+//    if evilPills.isDueToday(){
+//        print("pills should be taken today")
+//    } else {
+//        print("no pills today")
+//    }
+//}
 
-#Playground {
-    var evilPills = Medication(name: "Evil Pills", daysOfWeek: [.monday,.tuesday])
-    
-    //you can convert to weekday rawvalue to check its okay...
-    
-    if evilPills.isDueToday(){
-        print("pills should be taken today")
-    } else {
-        print("no pills today")
-    }
-}
