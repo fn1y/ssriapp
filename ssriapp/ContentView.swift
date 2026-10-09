@@ -15,10 +15,66 @@ struct ContentView: View {
                         MedPageView()
                     }
                 Tab("(Debug) Logs", systemImage: "list.bullet") {
-                    Text("Hi")
+                    LogPageView()
                 }
             }
 
+    }
+}
+
+struct LogPageView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \TakeLog.date, order: .reverse) private var logs: [TakeLog]
+    @Query(sort: \Medication.name) private var medications: [Medication]
+    @State private var presentedLog: TakeLog?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(logs) { log in
+                    NavigationLink(destination: LogEditView(log: log)) {
+                        VStack(alignment: .leading) {
+                            Text(log.medication.name)
+                            Text("Dose: \(log.dose) • \(log.date.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .onDelete(perform: deleteLogs)
+            }
+            .navigationTitle("Logs")
+            .toolbar {
+                Button("New", systemImage: "plus", action: createLog)
+                    .disabled(medications.isEmpty)
+            }
+            .overlay {
+                if medications.isEmpty {
+                    ContentUnavailableView(
+                        "No Medications",
+                        systemImage: "pill",
+                        description: Text("Create a medication before creating a log.")
+                    )
+                }
+            }
+        }
+        .sheet(item: $presentedLog) { log in
+            LogEditView(log: log)
+        }
+    }
+
+    private func deleteLogs(_ indexSet: IndexSet) {
+        for index in indexSet {
+            modelContext.delete(logs[index])
+        }
+    }
+
+    private func createLog() {
+        guard let medication = medications.first else { return }
+
+        let log = TakeLog(medication: medication)
+        modelContext.insert(log)
+        presentedLog = log
     }
 }
 

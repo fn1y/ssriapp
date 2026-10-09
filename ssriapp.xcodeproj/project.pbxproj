@@ -261,6 +261,7 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "ssriapp" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ssricon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7RJ76H824H;
@@ -299,6 +300,7 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "ssriapp" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = ssricon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7RJ76H824H;
