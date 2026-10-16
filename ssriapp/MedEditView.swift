@@ -31,6 +31,13 @@ struct MedEditView: View {
                 Section("Name") {
                     TextField("Medication name", text: $medication.name)
                 }
+                Section {
+                    DoseControls(dose: $medication.presetDose)
+                } header: {
+                    Text("Preset Dose")
+                } footer: {
+                    Text("QuickLog uses this dose. Set a dose above 0mg to enable QuickLog.")
+                }
                 Section("Schedule") {
                     //for each 
                     ForEach(weekdayItems, id: \.label) { item in

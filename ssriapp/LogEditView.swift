@@ -10,6 +10,10 @@ struct LogEditView: View {
             Form {
                 Section("Medication") {
                     Picker("Medication", selection: $log.medication) {
+                        if log.medication == nil {
+                            Text("Deleted Medication")
+                                .tag(nil as Medication?)
+                        }
                         ForEach(medications) { medication in
                             Text(medication.name)
                                 .tag(medication)
@@ -18,16 +22,7 @@ struct LogEditView: View {
                 }
 
                 Section("Dose") {
-                    Stepper(value: $log.dose, in: 0...10_000, step: 5) {
-                        HStack {
-                            Text("Dose")
-                            Spacer()
-                            Text(log.dose, format: .number)
-                                .contentTransition(.numericText(value: Double(log.dose)))
-                                .animation(.default, value: log.dose)
-                            Text("mg")
-                        }
-                    }
+                    DoseControls(dose: $log.dose)
                 }
 
                 Section("Date") {
@@ -40,6 +35,33 @@ struct LogEditView: View {
             }
             .navigationTitle("Edit Log")
         }
+    }
+}
+
+struct DoseControls: View {
+    @Binding var dose: Int
+
+    private let presets = Array(stride(from: 25, through: 300, by: 25))
+
+    var body: some View {
+        Stepper(value: $dose, in: 0...10_000, step: 5) {
+            Text("\(dose)mg")
+                .contentTransition(.numericText(value: Double(dose)))
+                .animation(.default, value: dose)
+                .font(.system(size: 50, weight: .bold, design: .rounded))
+        }
+
+        ScrollView(.horizontal) {
+            HStack {
+                ForEach(presets, id: \.self) { preset in
+                    Button("\(preset)mg") {
+                        dose = preset
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+        }
+        .clipShape(.capsule)
     }
 }
 

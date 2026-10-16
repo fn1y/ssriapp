@@ -33,10 +33,16 @@ struct Weekdays: OptionSet, Codable {
 class Medication{
     var name: String
     var daysOfWeek: Weekdays
+    var presetDose: Int = 0
+
+    // Keep log history and clear its medication reference when this medication is deleted.
+    @Relationship(deleteRule: .nullify, inverse: \TakeLog.medication)
+    var logs: [TakeLog] = []
     
-    init(name: String, daysOfWeek: Weekdays) {
+    init(name: String, daysOfWeek: Weekdays, presetDose: Int = 0) {
         self.name = name
         self.daysOfWeek = daysOfWeek
+        self.presetDose = presetDose
     }
     
     @MainActor func isDueToday() -> Bool{
@@ -61,7 +67,7 @@ class Medication{
 //each log has a medication, a dosage, and a time and date.
 @Model
 class TakeLog{
-    var medication: Medication
+    var medication: Medication?
     var dose: Int
     var date: Date
     

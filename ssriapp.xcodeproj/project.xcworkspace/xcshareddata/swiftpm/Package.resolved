@@ -1,6 +1,15 @@
 {
-  "originHash" : "f4c9963fd3e8591e43e4ec917edd9e68283068aba0f210252ffda0e1f9d18f18",
+  "originHash" : "382a4192ad8608f2bfecc9d33080c4171253001ae9874befd3698ab3727da1d3",
   "pins" : [
+    {
+      "identity" : "gradiente",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nicorsm/Gradiente.git",
+      "state" : {
+        "revision" : "19c5c35dc6f93593a946b09683917516703bc1c1",
+        "version" : "1.0.1"
+      }
+    },
     {
       "identity" : "swiftdate",
       "kind" : "remoteSourceControl",

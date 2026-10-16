@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		30C1F825306AC26400C16F01 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 30C1F824306AC26400C16F01 /* SwiftDate */; };
+		30C8BE66307969D200164157 /* Gradiente in Frameworks */ = {isa = PBXBuildFile; productRef = 30C8BE65307969D200164157 /* Gradiente */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				30C8BE66307969D200164157 /* Gradiente in Frameworks */,
 				30C1F825306AC26400C16F01 /* SwiftDate in Frameworks */,
 			);
 		};
@@ -67,6 +69,7 @@
 			name = ssriapp;
 			packageProductDependencies = (
 				30C1F824306AC26400C16F01 /* SwiftDate */,
+				30C8BE65307969D200164157 /* Gradiente */,
 			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* ssriapp.app */;
@@ -98,6 +101,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				30C1F823306AC26400C16F01 /* XCRemoteSwiftPackageReference "SwiftDate" */,
+				30C8BE64307969D200164157 /* XCRemoteSwiftPackageReference "Gradiente" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
@@ -366,6 +370,14 @@
 				minimumVersion = 7.0.0;
 			};
 		};
+		30C8BE64307969D200164157 /* XCRemoteSwiftPackageReference "Gradiente" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nicorsm/Gradiente.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -373,6 +385,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 30C1F823306AC26400C16F01 /* XCRemoteSwiftPackageReference "SwiftDate" */;
 			productName = SwiftDate;
+		};
+		30C8BE65307969D200164157 /* Gradiente */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 30C8BE64307969D200164157 /* XCRemoteSwiftPackageReference "Gradiente" */;
+			productName = Gradiente;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
