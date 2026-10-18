@@ -6,14 +6,10 @@ import Gradiente
 struct ContentView: View {
     var body: some View {
         HomePageView()
-            .gradienteBackground(position: .top,
-                                 opacity: 1.0,
-                                 height: 300.0,
-                                 colors: [.cyan, .purple])
     }
 }
 
-struct MedicationManagementView: View {
+struct SettingsView: View {
     var body: some View {
         List {
             NavigationLink {
@@ -27,7 +23,7 @@ struct MedicationManagementView: View {
                 Label("Logs", systemImage: "list.bullet")
             }
         }
-        .navigationTitle("Medications & Logs")
+        .navigationTitle("Settings")
     }
 }
 
@@ -79,13 +75,17 @@ struct HomePageView: View {
                     .buttonStyle(.plain)
                     .disabled(pending.isEmpty || needsDose)
                     .accessibilityLabel(allDone ? "All Done" : "QuickLog today's medications")
+                    
+                    Label("Edit Dose", systemImage: "pencil.line")
+                        .buttonStyle(.borderedProminent)
 
-                    Text(due.isEmpty ? "No meds due today" : (allDone ? "Meds taken" : "Take your meds!"))
+                    Text(due.isEmpty ? "Nothing due today" : (allDone ? "Medication logged" : "Take your meds!"))
                         .font(.largeTitle.bold())
                         .foregroundStyle(allDone ? completionColor : Color.primary)
                         .contentTransition(.numericText())
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
+                    
 
                     if medications.isEmpty {
                         Text("Open Medications using the top-right toolbar button to add a medication.")
@@ -94,17 +94,50 @@ struct HomePageView: View {
                         Text("Set a preset dose in Medications using the top-right toolbar button to use QuickLog.")
                             .foregroundStyle(.secondary)
                     }
+                    
+                    VStack{
+                        HStack{
+                            Text("Time Window")
+                            Spacer()
+                            Text("Until 11:33")
+                        }
+                        ZStack{
+                            Rectangle()
+                                .fill(.linearGradient(
+                                    colors: [.teal, .green],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                .frame(height:40)
+                        }
+                        .cornerRadius(10)
+                        .padding([.top,.bottom], 4)
+                        Text("To maintain a consistent level, in your blood and mood, you should take your meds now. This is a dummy widget.")
+                            .font(.caption)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding()
+                    .background(Color(uiColor: .secondarySystemGroupedBackground))
+                    .cornerRadius(24)
+                    .padding()
+                    
+                    Spacer()
                 }
                 .multilineTextAlignment(.center)
                 .padding()
                 .animation(reduceMotion ? nil : .spring(duration: 0.45), value: allDone)
+                .background(Color(uiColor: .systemGroupedBackground))
+                
             }
+            .navigationTitle("Sun 18th Oct")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        MedicationManagementView()
+                        SettingsView()
                     } label: {
-                        Label("Medications and Logs", systemImage: "list.bullet.rectangle")
+                        Label("Settings", systemImage: "gearshape")
                     }
                 }
             }
@@ -116,11 +149,14 @@ struct HomePageView: View {
         }
     }
 
+    //function that gets the current date and returns a list of due meds
     private func medicationsDue(on date: Date) -> [Medication] {
         let weekday = Weekdays(rawValue: 1 << (Calendar.current.component(.weekday, from: date) - 1))
         return medications.filter { $0.daysOfWeek.contains(weekday) }
     }
 
+    //function that gets due meds that haven't been taken
+    //going to need this explained
     private func pendingMedications(on date: Date) -> [Medication] {
         let takenIDs = Set(logs.compactMap { log in
             Calendar.current.isDate(log.date, inSameDayAs: date) && log.dose > 0
