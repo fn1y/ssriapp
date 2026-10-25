@@ -1,15 +1,10 @@
 {
   "features" : [
-    "refractivity"
+    "specular-location"
   ],
   "fill-specializations" : [
     {
-      "value" : {
-        "linear-gradient" : [
-          "srgb:0.84397,0.51284,1.00000,1.00000",
-          "srgb:0.14571,0.22911,0.75877,1.00000"
-        ]
-      }
+      "value" : "automatic"
     },
     {
       "appearance" : "dark",
@@ -20,52 +15,64 @@
     {
       "layers" : [
         {
-          "fill-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : {
-                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
-              }
-            }
-          ],
-          "image-name" : "􀙌.svg",
-          "name" : "􀙌"
-        },
-        {
-          "fill-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : {
-                "automatic-gradient" : "srgb:0.64706,0.55294,1.00000,1.00000"
-              }
-            }
-          ],
-          "image-name" : "Group 6.svg",
-          "name" : "Group 6"
+          "image-name" : "Frame 9.svg",
+          "name" : "Frame 9"
         }
       ],
       "lighting" : "individual",
       "refractivity" : {
-        "depth" : 0.612578125,
-        "enabled" : true,
-        "strength" : -0.2564453125
+        "depth" : 0.6044921875,
+        "enabled" : false,
+        "strength" : 0.7966796875
       },
-      "shadow-specializations" : [
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : "outside",
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    },
+    {
+      "layers" : [
         {
-          "value" : {
-            "kind" : "layer-color",
-            "opacity" : 1
-          }
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "system-light"
+            }
+          ],
+          "glass" : true,
+          "image-name" : "Frame 11.svg",
+          "name" : "Frame 11"
         },
         {
-          "appearance" : "dark",
-          "value" : {
-            "kind" : "neutral",
-            "opacity" : 1
-          }
+          "image-name" : "Frame 10.svg",
+          "name" : "Frame 10",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.7
+            }
+          ]
+        },
+        {
+          "image-name" : "Frame 8.svg",
+          "name" : "Frame 8",
+          "opacity" : 0.5
         }
       ],
-      "specular" : true,
+      "refractivity" : {
+        "depth" : 0.6044921875,
+        "enabled" : false,
+        "strength" : 0.7966796875
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
       "translucency" : {
         "enabled" : true,
         "value" : 0.3

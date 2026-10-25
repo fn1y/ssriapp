@@ -38,101 +38,111 @@ struct HomePageView: View {
 
     var body: some View {
         NavigationStack {
-            TimelineView(.periodic(from: .now, by: 60)) { context in
-                let due = medicationsDue(on: context.date)
-                let pending = pendingMedications(on: context.date)
-                let allDone = !due.isEmpty && pending.isEmpty
-                let needsDose = pending.contains { $0.presetDose <= 0 }
+            ZStack {
+                TimelineView(.periodic(from: .now, by: 60)) { context in
+                    let due = medicationsDue(on: context.date)
+                    let pending = pendingMedications(on: context.date)
+                    let allDone = !due.isEmpty && pending.isEmpty
+                    let needsDose = pending.contains { $0.presetDose <= 0 }
 
-                VStack(spacing: 24) {
-                    Button(action: quickLog) {
-                        Color.clear
-                            .aspectRatio(1, contentMode: .fit)
-                            .glassEffect(
-                                .regular.tint(allDone ? completionColor : nil).interactive(),
-                                in: WavyStamp()
-                            )
-                            .contentShape(WavyStamp())
-                            .overlay {
-                                ZStack {
-                                    VStack(spacing: 8) {
-                                        Image(systemName: allDone ? "checkmark" : "plus")
-                                            .font(.largeTitle.bold())
-                                            .contentTransition(.symbolEffect(.replace))
-                                            .symbolEffect(.bounce, value: allDone)
-                                            .symbolEffectsRemoved(reduceMotion)
-                                        Text(allDone ? "All Done" : "Tap to QuickLog")
-                                            .font(.headline)
-                                            .contentTransition(.numericText())
-                                    }
-                                    Circle()
-                                        .strokeBorder(.primary.opacity(0.4), style: StrokeStyle(lineWidth: 2, dash: [10]))
-                                        .frame(width: 200, height: 200)
-                                        .accessibilityHidden(true)
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            ZStack{
+                                Button(action: quickLog) {
+                                    Color.clear
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .glassEffect(
+                                            .regular.tint(allDone ? completionColor : nil).interactive(),
+                                            in: WavyStamp()
+                                        )
+                                        .contentShape(WavyStamp())
+                                        .overlay {
+                                            ZStack {
+                                                VStack(spacing: 8) {
+                                                    Image(systemName: allDone ? "checkmark" : "plus")
+                                                        .font(.largeTitle.bold())
+                                                        .contentTransition(.symbolEffect(.replace))
+                                                        .symbolEffect(.bounce, value: allDone)
+                                                        .symbolEffectsRemoved(reduceMotion)
+                                                    Text(allDone ? "All Done" : "Tap to QuickLog")
+                                                        .font(.headline)
+                                                        .contentTransition(.numericText())
+                                                }
+                                                Circle()
+                                                    .strokeBorder(.primary.opacity(0.4), style: StrokeStyle(lineWidth: 2, dash: [10]))
+                                                    .frame(width: 200, height: 200)
+                                                    .accessibilityHidden(true)
+                                            }
+                                        }
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(pending.isEmpty || needsDose)
+                                .accessibilityLabel(allDone ? "All Done" : "QuickLog today's medications")
+                            }
+                            
+                            HStack{
+                                Button(action: {}) {
+                                    Label("Undo", systemImage: "trash")
+                                }
+                                Button(action: {}) {
+                                    Label("Edit Dose", systemImage: "pencil.line")
                                 }
                             }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(pending.isEmpty || needsDose)
-                    .accessibilityLabel(allDone ? "All Done" : "QuickLog today's medications")
-                    
-                    Label("Edit Dose", systemImage: "pencil.line")
-                        .buttonStyle(.borderedProminent)
-
-                    Text(due.isEmpty ? "Nothing due today" : (allDone ? "Medication logged" : "Take your meds!"))
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(allDone ? completionColor : Color.primary)
-                        .contentTransition(.numericText())
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                    
-
-                    if medications.isEmpty {
-                        Text("Open Medications using the top-right toolbar button to add a medication.")
-                            .foregroundStyle(.secondary)
-                    } else if needsDose {
-                        Text("Set a preset dose in Medications using the top-right toolbar button to use QuickLog.")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    VStack{
-                        HStack{
-                            Text("Time Window")
-                            Spacer()
-                            Text("Until 11:33")
-                        }
-                        ZStack{
-                            Rectangle()
-                                .fill(.linearGradient(
-                                    colors: [.teal, .green],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                ))
-                                .frame(height:40)
-                        }
-                        .cornerRadius(10)
-                        .padding([.top,.bottom], 4)
-                        Text("To maintain a consistent level, in your blood and mood, you should take your meds now. This is a dummy widget.")
                             .font(.caption)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .buttonStyle(.bordered)
+                            .foregroundStyle(.primary)
+                            .padding([.bottom,.top], -5)
+        
+                            Text(due.isEmpty ? "Nothing due today" : (allDone ? "Medication logged" : "Take your meds!"))
+                                .font(.largeTitle.bold())
+                                .foregroundStyle(allDone ? completionColor : Color.primary)
+                                .contentTransition(.numericText())
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                            
+        
+    //                        if medications.isEmpty {
+    //                            Text("Open Medications using the top-right toolbar button to add a medication.")
+    //                                .foregroundStyle(.secondary)
+    //                        } else if needsDose {
+    //                            Text("Set a preset dose in Medications using the top-right toolbar button to use QuickLog.")
+    //                                .foregroundStyle(.secondary)
+    //                        }
+                            
+                            TimeWindowView()
+                            
+                        }
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .animation(reduceMotion ? nil : .spring(duration: 0.45), value: allDone)
                     }
-                    .padding()
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                    .cornerRadius(24)
-                    .padding()
-                    
-                    Spacer()
+                    .scrollEdgeEffectStyle(.soft, for: .top)
+                    .scrollBounceBehavior(.basedOnSize)
                 }
-                .multilineTextAlignment(.center)
-                .padding()
-                .animation(reduceMotion ? nil : .spring(duration: 0.45), value: allDone)
-                .background(Color(uiColor: .systemGroupedBackground))
-                
             }
-            .navigationTitle("Sun 18th Oct")
+            .background {
+                GeometryReader { geometry in
+                    Circle()
+                        .fill(.gray)
+                        .frame(width: 600, height: 600)
+                        .blur(radius: 100)
+                        // Position the circle's center at the screen's top edge.
+                        .position(x: geometry.size.width / 2, y: 0)
+                        .opacity(0.7)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Median")
+                        .font(.headline)
+                        .fontWidth(.expanded)
+                        .accessibilityAddTraits(.isHeader)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
                         SettingsView()
@@ -170,7 +180,7 @@ struct HomePageView: View {
         let now = Date.now
         let pending = pendingMedications(on: now)
         guard !pending.isEmpty, pending.allSatisfy({ $0.presetDose > 0 }) else { return }
-
+        
         let newLogs = pending.map {
             TakeLog(medication: $0, dose: $0.presetDose, date: now)
         }
