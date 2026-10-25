@@ -88,10 +88,10 @@ struct TimeWindowView: View {
                         .padding(.horizontal)
                 }
             }
-            .padding(.vertical)
-            .glassEffect(in: .rect(cornerRadius: 30.0))
-//            .cornerRadius(24)
-            .padding()
+//            .padding(.vertical)
+//            .glassEffect(in: .rect(cornerRadius: 30.0))
+////            .cornerRadius(24)
+//            .padding()
         }
     }
 }

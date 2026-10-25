@@ -1,216 +1,242 @@
 import SwiftUI
-import Playgrounds
 import SwiftData
 
 struct ContentView: View {
-    var body: some View {
-        HomePageView()
-    }
-}
-
-struct HomePageView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Medication.name) private var medications: [Medication]
     @Query private var logs: [TakeLog]
+    @State private var presentedMedication: Medication?
     @State private var showingSaveError = false
-
-    private let completionColor = Color.green
+    @State private var refreshDate = Date.now
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                TimelineView(.periodic(from: .now, by: 60)) { context in
-                    let due = medicationsDue(on: context.date)
-                    let pending = pendingMedications(on: context.date)
-                    let allDone = !due.isEmpty && pending.isEmpty
-                    let needsDose = pending.contains { $0.presetDose <= 0 }
+            TimelineView(.periodic(from: refreshDate, by: 60)) { timeline in
+                let now = max(timeline.date, refreshDate)
+                let due = medications.filter { MedicationCompletion.isDue($0, on: now) }
+                let completedIDs = Set(logs.filter {
+                    $0.dose > 0 && Calendar.current.isDate($0.date, inSameDayAs: now)
+                }.compactMap { $0.medication?.persistentModelID })
 
-                    ScrollView {
-                        VStack(spacing: 24) {
-                            ZStack{
-                                Button(action: quickLog) {
-                                    Color.clear
-                                        .aspectRatio(1, contentMode: .fit)
-                                        .glassEffect(
-                                            .regular.tint(allDone ? completionColor : nil).interactive(),
-                                            in: WavyStamp()
-                                        )
-                                        .contentShape(WavyStamp())
-                                        .overlay {
-                                            ZStack {
-                                                VStack(spacing: 8) {
-                                                    Image(systemName: allDone ? "checkmark" : "plus")
-                                                        .font(.largeTitle.bold())
-                                                        .contentTransition(.symbolEffect(.replace))
-                                                        .symbolEffect(.bounce, value: allDone)
-                                                        .symbolEffectsRemoved(reduceMotion)
-                                                    Text(allDone ? "All Done" : "Tap to QuickLog")
-                                                        .font(.headline)
-                                                        .contentTransition(.numericText())
-                                                }
-                                                Circle()
-                                                    .strokeBorder(.primary.opacity(0.4), style: StrokeStyle(lineWidth: 2, dash: [10]))
-                                                    .frame(width: 200, height: 200)
-                                                    .accessibilityHidden(true)
-                                            }
-                                        }
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(pending.isEmpty || needsDose)
-                                .accessibilityLabel(allDone ? "All Done" : "QuickLog today's medications")
-                            }
-                            
-                            HStack{
-                                Button(action: {}) {
-                                    Label("Undo", systemImage: "trash")
-                                }
-                                Button(action: {}) {
-                                    Label("Edit Dose", systemImage: "pencil.line")
-                                }
-                            }
-                            .font(.caption)
-                            .buttonStyle(.bordered)
-                            .foregroundStyle(.primary)
-                            .padding([.bottom,.top], -5)
-        
-                            Text(due.isEmpty ? "Nothing due today" : (allDone ? "Medication logged" : "Take your meds!"))
-                                .font(.largeTitle.bold())
-                                .foregroundStyle(allDone ? completionColor : Color.primary)
-                                .contentTransition(.numericText())
-                                .multilineTextAlignment(.center)
-                                .frame(maxWidth: .infinity)
-                            
-        
-    //                        if medications.isEmpty {
-    //                            Text("Open Medications using the top-right toolbar button to add a medication.")
-    //                                .foregroundStyle(.secondary)
-    //                        } else if needsDose {
-    //                            Text("Set a preset dose in Medications using the top-right toolbar button to use QuickLog.")
-    //                                .foregroundStyle(.secondary)
-    //                        }
-                            
-                            TimeWindowView()
-                            
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if due.isEmpty {
+                            ContentUnavailableView(
+                                medications.isEmpty ? "No medications yet" : "Nothing due today",
+                                systemImage: "pill",
+                                description: medications.isEmpty
+                                    ? Text("Add a medication in Settings to get started.")
+                                    : nil
+                            )
                         }
-                        .multilineTextAlignment(.center)
-                        .padding()
-                        .animation(reduceMotion ? nil : .spring(duration: 0.45), value: allDone)
+
+                        ForEach(due) { medication in
+                            MedicationCard(
+                                medication: medication,
+                                isDone: completedIDs.contains(medication.persistentModelID),
+                                toggleCompletion: { toggleCompletion(for: medication) },
+                                edit: { presentedMedication = medication }
+                            )
+                        }
                     }
-                    .scrollEdgeEffectStyle(.soft, for: .top)
-                    .scrollBounceBehavior(.basedOnSize)
+                    .padding()
                 }
-            }
-            .background {
-                GeometryReader { geometry in
-                    Circle()
-                        .fill(.gray)
-                        .frame(width: 600, height: 600)
-                        .blur(radius: 100)
-                        // Position the circle's center at the screen's top edge.
-                        .position(x: geometry.size.width / 2, y: 0)
-                        .opacity(0.7)
-                }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Median")
-                        .font(.headline)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Label("Settings", systemImage: "gearshape")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        HStack {
+                            Text(now.formatted(.dateTime.weekday(.wide)))
+                                .accessibilityAddTraits(.isHeader)
+                            Text(now.formatted(.dateTime.day()))
+                                .foregroundStyle(.teal)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(.teal.opacity(0.2))
+                                }
+                            Text(now.formatted(.dateTime.month(.abbreviated)))
+                        }
+                        .font(.title3.bold())
+                        .padding()
+                        .fixedSize(horizontal: true, vertical: false)
+                    }
+                    ToolbarSpacer()
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Label("New", systemImage: "plus")
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SettingsView()
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
                     }
                 }
             }
         }
-        .alert("Couldn't save your logs", isPresented: $showingSaveError) {
+        .sheet(item: $presentedMedication) { medication in
+            MedEditView(medication: medication)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                refreshDate = .now
+            }
+        }
+        .alert("Couldn't update your logs", isPresented: $showingSaveError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Your medications haven't been marked as taken. Please try again.")
+            Text("The completion change wasn't saved. Please try again.")
         }
     }
 
-    //function that gets the current date and returns a list of due meds
-    private func medicationsDue(on date: Date) -> [Medication] {
-        let weekday = Weekdays(rawValue: 1 << (Calendar.current.component(.weekday, from: date) - 1))
-        return medications.filter { $0.daysOfWeek.contains(weekday) }
-    }
-
-    //function that gets due meds that haven't been taken
-    //going to need this explained
-    private func pendingMedications(on date: Date) -> [Medication] {
-        let takenIDs = Set(logs.compactMap { log in
-            Calendar.current.isDate(log.date, inSameDayAs: date) && log.dose > 0
-                ? log.medication?.persistentModelID : nil
-        })
-        return medicationsDue(on: date).filter { !takenIDs.contains($0.persistentModelID) }
-    }
-
-    private func quickLog() {
-        // Recheck the current day at tap time, including logs entered manually.
-        let now = Date.now
-        let pending = pendingMedications(on: now)
-        guard !pending.isEmpty, pending.allSatisfy({ $0.presetDose > 0 }) else { return }
-        
-        let newLogs = pending.map {
-            TakeLog(medication: $0, dose: $0.presetDose, date: now)
-        }
-        for log in newLogs {
-            modelContext.insert(log)
-        }
+    private func toggleCompletion(for medication: Medication) {
         do {
-            try modelContext.save()
+            try MedicationCompletion.toggle(medication, in: modelContext)
         } catch {
-            for log in newLogs {
-                modelContext.delete(log)
-            }
             showingSaveError = true
         }
+        refreshDate = .now
     }
 }
 
-struct WavyStamp: Shape {
-    var waves: Int = 12
-    var depth: CGFloat = 0.055
+private struct MedicationCard: View {
+    let medication: Medication
+    let isDone: Bool
+    let toggleCompletion: () -> Void
+    let edit: () -> Void
 
-    func path(in rect: CGRect) -> Path {
-        let radius = min(rect.width, rect.height) / 2
-        let amplitude = radius * depth
-        let centre = CGPoint(x: rect.midX, y: rect.midY)
+    private var schedule: String {
+        if medication.daysOfWeek.rawValue & 127 == 127 {
+            return String(localized: "Daily")
+        }
+        let symbols = Calendar.current.shortWeekdaySymbols
+        return (0..<7).filter {
+            medication.daysOfWeek.contains(Weekdays(rawValue: 1 << $0))
+        }.map { symbols[$0] }.formatted(.list(type: .and, width: .short))
+    }
 
-        return Path { path in
-            for step in 0..<720 {
-                let angle = CGFloat(step) / 720 * .pi * 2
-                let r = radius - amplitude
-                    + amplitude * cos(CGFloat(waves) * angle)
-
-                let point = CGPoint(
-                    x: centre.x + r * cos(angle),
-                    y: centre.y + r * sin(angle)
-                )
-
-                if step == 0 {
-                    path.move(to: point)
-                } else {
-                    path.addLine(to: point)
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading) {
+                    Text(medication.name)
+                        .font(.headline.bold())
+                    Text("\(schedule) ∙ \(medication.presetDose)mg")
+                        .font(.subheadline)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Button(action: toggleCompletion) {
+                    Image(systemName: isDone ? "checkmark" : "plus")
+                        .font(.title3.bold())
+                        .frame(width: 52, height: 52)
+                        .glassEffect(
+                            .regular.tint(isDone ? .green : nil).interactive(),
+                            in: WavyStamp()
+                        )
+                        .contentShape(WavyStamp())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isDone && medication.presetDose <= 0)
+                .accessibilityLabel(isDone
+                    ? "Undo today's logs for \(medication.name)"
+                    : "Mark \(medication.name) as done")
+                .accessibilityValue(isDone ? "Done" : "Not taken")
+                .accessibilityHint(isDone
+                    ? "Removes all positive-dose logs for this medication today."
+                    : "Logs the preset dose.")
             }
 
-            path.closeSubpath()
+            if !isDone && medication.presetDose <= 0 {
+                Text("Set a dose using Edit Medication to enable logging.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Divider()
+            TimeWindowView()
+        }
+        .padding()
+        .glassEffect(in: .rect(cornerRadius: 30))
+        .contentShape(.rect(cornerRadius: 30))
+        .contextMenu {
+            Button("Edit Medication", systemImage: "pencil", action: edit)
+        }
+        .accessibilityAction(named: "Edit Medication", edit)
+    }
+}
+
+/// Uses saved logs as the source of truth for each day's completion.
+enum MedicationCompletion {
+    static func isDue(_ medication: Medication, on date: Date) -> Bool {
+        let weekday = Calendar.current.component(.weekday, from: date) - 1
+        return medication.daysOfWeek.contains(Weekdays(rawValue: 1 << weekday))
+    }
+
+    @MainActor
+    static func toggle(_ medication: Medication, in context: ModelContext, now: Date = .now) throws {
+        guard isDue(medication, on: now), !medication.isDeleted else { return }
+
+        // Commit existing edits first so rollback can only undo this operation.
+        // If this save fails, leave those edits in memory and do not change logs.
+        try context.save()
+        let todaysLogs = try context.fetch(FetchDescriptor<TakeLog>()).filter {
+            $0.medication?.persistentModelID == medication.persistentModelID
+                && $0.dose > 0
+                && Calendar.current.isDate($0.date, inSameDayAs: now)
+        }
+        guard !todaysLogs.isEmpty || medication.presetDose > 0 else { return }
+
+        do {
+            if todaysLogs.isEmpty {
+                context.insert(TakeLog(medication: medication, dose: medication.presetDose, date: now))
+            } else {
+                for log in todaysLogs {
+                    context.delete(log)
+                }
+            }
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
         }
     }
 }
 
-#Preview {
+@MainActor
+private func medicationPreviewContainer() throws -> ModelContainer {
+    let container = try ModelContainer(
+        for: Medication.self, TakeLog.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let daily = Weekdays(rawValue: 127)
+    let pending = Medication(name: "Sertraline", daysOfWeek: daily, presetDose: 50)
+    let completed = Medication(name: "Example completed medication", daysOfWeek: daily, presetDose: 25)
+    let needsDose = Medication(name: "Example without a dose", daysOfWeek: daily)
+    container.mainContext.insert(pending)
+    container.mainContext.insert(completed)
+    container.mainContext.insert(needsDose)
+    container.mainContext.insert(TakeLog(medication: completed, dose: 25))
+    return container
+}
+
+#Preview("Medications") {
+    if let container = try? medicationPreviewContainer() {
+        ContentView()
+            .modelContainer(container)
+    } else {
+        Text("Unable to create preview data")
+    }
+}
+
+#Preview("Empty") {
     ContentView()
-        .modelContainer(for: [Medication.self, TakeLog.self])
+        .modelContainer(for: [Medication.self, TakeLog.self], inMemory: true)
 }
