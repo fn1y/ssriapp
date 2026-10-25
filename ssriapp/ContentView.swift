@@ -1,29 +1,10 @@
 import SwiftUI
 import Playgrounds
 import SwiftData
-import Gradiente
 
 struct ContentView: View {
     var body: some View {
         HomePageView()
-    }
-}
-
-struct SettingsView: View {
-    var body: some View {
-        List {
-            NavigationLink {
-                MedPageView()
-            } label: {
-                Label("Medications", systemImage: "pill")
-            }
-            NavigationLink {
-                LogPageView()
-            } label: {
-                Label("Logs", systemImage: "list.bullet")
-            }
-        }
-        .navigationTitle("Settings")
     }
 }
 
@@ -140,7 +121,6 @@ struct HomePageView: View {
                 ToolbarItem(placement: .principal) {
                     Text("Median")
                         .font(.headline)
-                        .fontWidth(.expanded)
                         .accessibilityAddTraits(.isHeader)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -195,108 +175,6 @@ struct HomePageView: View {
             }
             showingSaveError = true
         }
-    }
-}
-
-struct LogPageView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \TakeLog.date, order: .reverse) private var logs: [TakeLog]
-    @Query(sort: \Medication.name) private var medications: [Medication]
-    @State private var presentedLog: TakeLog?
-
-    var body: some View {
-        List {
-            ForEach(logs) { log in
-                NavigationLink(destination: LogEditView(log: log)) {
-                    VStack(alignment: .leading) {
-                        if let medication = log.medication {
-                            Text(medication.name)
-                        } else {
-                            Text("Deleted Medication")
-                        }
-                        Text("\(log.dose)mg • \(log.date.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .onDelete(perform: deleteLogs)
-        }
-        .navigationTitle("Logs")
-        .toolbar {
-            Button("New", systemImage: "plus", action: createLog)
-                .disabled(medications.isEmpty)
-        }
-        .overlay {
-            if medications.isEmpty && logs.isEmpty {
-                ContentUnavailableView(
-                    "No Medications",
-                    systemImage: "pill",
-                    description: Text("Create a medication before creating a log.")
-                )
-            }
-        }
-        .sheet(item: $presentedLog) { log in
-            LogEditView(log: log)
-        }
-    }
-
-    private func deleteLogs(_ indexSet: IndexSet) {
-        for index in indexSet {
-            modelContext.delete(logs[index])
-        }
-    }
-
-    private func createLog() {
-        guard let medication = medications.first else { return }
-
-        let log = TakeLog(medication: medication)
-        modelContext.insert(log)
-        presentedLog = log
-    }
-}
-
-
-struct MedPageView: View {
-
-    @Environment(\.modelContext) var modelContext
-    @Query(sort: \Medication.name) var meds: [Medication]
-    @State private var presentedMed: Medication? = nil
-
-    var body: some View {
-        List {
-            ForEach(meds) { med in
-                NavigationLink(destination: MedEditView(medication: med)) {
-                    Text(med.name)
-                }
-            }
-            .onDelete(perform: deleteMed)
-        }
-        .scrollContentBackground(.hidden)
-        .gradienteBackground(position: .top,
-                                   opacity: 1,
-                                   height: 300.0,
-                                   colors: [.cyan, .purple])
-        .navigationTitle("Medications")
-        .toolbar {
-            Button("New", systemImage: "plus", action: { createMed() })
-        }
-        .sheet(item: $presentedMed) { med in
-            MedEditView(medication: med)
-        }
-    }
-    
-    private func deleteMed(_ indexSet: IndexSet) {
-            for index in indexSet {
-                let destination = meds[index]
-                modelContext.delete(destination)
-            }
-        }
-
-    private func createMed() {
-        let med = Medication(name: "Untitled Medication", daysOfWeek: [.monday])
-        modelContext.insert(med)
-        presentedMed = med
     }
 }
 

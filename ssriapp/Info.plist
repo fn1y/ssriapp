@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>SNPro-Black.ttf</string>
+		<string>SNPro-BlackItalic.ttf</string>
+		<string>SNPro-Bold.ttf</string>
+		<string>SNPro-BoldItalic.ttf</string>
+		<string>SNPro-Book.ttf</string>
+		<string>SNPro-BookItalic.ttf</string>
+		<string>SNPro-Heavy.ttf</string>
+		<string>SNPro-HeavyItalic.ttf</string>
+		<string>SNPro-Light.ttf</string>
+		<string>SNPro-LightItalic.ttf</string>
+		<string>SNPro-Medium.ttf</string>
+		<string>SNPro-MediumItalic.ttf</string>
+		<string>SNPro-Regular.ttf</string>
+		<string>SNPro-RegularItalic.ttf</string>
+		<string>SNPro-Semibold.ttf</string>
+		<string>SNPro-SemiboldItalic.ttf</string>
+		<string>SNPro-Thin.ttf</string>
+		<string>SNPro-ThinItalic.ttf</string>
+	</array>
+</dict>
+</plist>
