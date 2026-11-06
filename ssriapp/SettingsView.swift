@@ -159,6 +159,12 @@ struct MedEditView: View {
                     Text("QuickLog uses this dose. Set a dose above 0mg to enable QuickLog.")
                 }
                 Section("Schedule") {
+                    DatePicker(
+                        "Reminder time",
+                        selection: $medication.reminderTime,
+                        displayedComponents: .hourAndMinute
+                    )
+
                     //for each 
                     ForEach(weekdayItems, id: \.label) { item in
                         Toggle(item.label, isOn: Binding(

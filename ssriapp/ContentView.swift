@@ -2,6 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    // Previews can freeze the clock to show reproducible window states.
+    var previewDate: Date? = nil
+
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Medication.name) private var medications: [Medication]
@@ -13,7 +16,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             TimelineView(.periodic(from: refreshDate, by: 60)) { timeline in
-                let now = max(timeline.date, refreshDate)
+                let now = previewDate ?? max(timeline.date, refreshDate)
                 let due = medications.filter { MedicationCompletion.isDue($0, on: now) }
                 let completedIDs = Set(logs.filter {
                     $0.dose > 0 && Calendar.current.isDate($0.date, inSameDayAs: now)
@@ -34,6 +37,7 @@ struct ContentView: View {
                         ForEach(due) { medication in
                             MedicationCard(
                                 medication: medication,
+                                now: now,
                                 isDone: completedIDs.contains(medication.persistentModelID),
                                 toggleCompletion: { toggleCompletion(for: medication) },
                                 edit: { presentedMedication = medication }
@@ -42,6 +46,7 @@ struct ContentView: View {
                     }
                     .padding()
                 }
+                .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -97,7 +102,7 @@ struct ContentView: View {
 
     private func toggleCompletion(for medication: Medication) {
         do {
-            try MedicationCompletion.toggle(medication, in: modelContext)
+            try MedicationCompletion.toggle(medication, in: modelContext, now: previewDate ?? .now)
         } catch {
             showingSaveError = true
         }
@@ -107,6 +112,7 @@ struct ContentView: View {
 
 private struct MedicationCard: View {
     let medication: Medication
+    let now: Date
     let isDone: Bool
     let toggleCompletion: () -> Void
     let edit: () -> Void
@@ -134,6 +140,7 @@ private struct MedicationCard: View {
 
                 Button(action: toggleCompletion) {
                     Image(systemName: isDone ? "checkmark" : "plus")
+                        .foregroundStyle(isDone ? Color.white : Color.primary)
                         .font(.title3.bold())
                         .frame(width: 52, height: 52)
                         .glassEffect(
@@ -161,10 +168,14 @@ private struct MedicationCard: View {
             }
 
             Divider()
-            TimeWindowView()
+            let targetTime = medication.reminderDate(on: now)
+            TimeWindowView(
+                xOffset: Int((targetTime.timeIntervalSince(now) / 60 * 2.5).rounded()),
+                statusText: timeWindowLabel(targetTime: targetTime, now: now)
+            )
         }
         .padding()
-        .glassEffect(in: .rect(cornerRadius: 30))
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 30))
         .contentShape(.rect(cornerRadius: 30))
         .contextMenu {
             Button("Edit Medication", systemImage: "pencil", action: edit)
@@ -211,25 +222,46 @@ enum MedicationCompletion {
 }
 
 @MainActor
-private func medicationPreviewContainer() throws -> ModelContainer {
+private func medicationPreviewContainer(now: Date) throws -> ModelContainer {
     let container = try ModelContainer(
         for: Medication.self, TakeLog.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     let daily = Weekdays(rawValue: 127)
-    let pending = Medication(name: "Sertraline", daysOfWeek: daily, presetDose: 50)
-    let completed = Medication(name: "Example completed medication", daysOfWeek: daily, presetDose: 25)
-    let needsDose = Medication(name: "Example without a dose", daysOfWeek: daily)
-    container.mainContext.insert(pending)
+    let upcoming = Medication(
+        name: "1. Upcoming window", daysOfWeek: daily, presetDose: 50,
+        reminderTime: now.addingTimeInterval(90 * 60)
+    )
+    let active = Medication(
+        name: "2. Inside window", daysOfWeek: daily, presetDose: 50,
+        reminderTime: now.addingTimeInterval(30 * 60)
+    )
+    let ended = Medication(
+        name: "3. Ended window", daysOfWeek: daily, presetDose: 50,
+        reminderTime: now.addingTimeInterval(-90 * 60)
+    )
+    let completed = Medication(
+        name: "4. Completed medication", daysOfWeek: daily, presetDose: 25,
+        reminderTime: now
+    )
+    let needsDose = Medication(
+        name: "5. Without a dose", daysOfWeek: daily,
+        reminderTime: now
+    )
+    container.mainContext.insert(upcoming)
+    container.mainContext.insert(active)
+    container.mainContext.insert(ended)
     container.mainContext.insert(completed)
     container.mainContext.insert(needsDose)
-    container.mainContext.insert(TakeLog(medication: completed, dose: 25))
+    container.mainContext.insert(TakeLog(medication: completed, dose: 25, date: now))
     return container
 }
 
-#Preview("Medications") {
-    if let container = try? medicationPreviewContainer() {
-        ContentView()
+#Preview("Time window states") {
+    // Noon keeps all sample reminder times on the same day, even when viewed at night.
+    let now = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now) ?? .now
+    if let container = try? medicationPreviewContainer(now: now) {
+        ContentView(previewDate: now)
             .modelContainer(container)
     } else {
         Text("Unable to create preview data")

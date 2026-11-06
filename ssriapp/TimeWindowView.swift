@@ -19,7 +19,6 @@ struct TimeWindowView: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(.green)
                 }
-                .padding(.horizontal)
                 
                 
                 ZStack{

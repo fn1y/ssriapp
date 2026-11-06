@@ -35,14 +35,39 @@ class Medication{
     var daysOfWeek: Weekdays
     var presetDose: Int = 0
 
+    // Store a local clock time, independent of a particular date or time zone.
+    // The default also supplies a value for medications saved before this field existed.
+    private(set) var reminderMinutes: Int = 540
+
+    var reminderTime: Date {
+        get { reminderDate(on: .now) }
+        set {
+            let calendar = Calendar.current
+            reminderMinutes = calendar.component(.hour, from: newValue) * 60
+                + calendar.component(.minute, from: newValue)
+        }
+    }
+
+    func reminderDate(on date: Date, calendar: Calendar = .current) -> Date {
+        calendar.date(
+            bySettingHour: reminderMinutes / 60,
+            minute: reminderMinutes % 60,
+            second: 0,
+            of: date
+        ) ?? calendar.startOfDay(for: date)
+    }
+
     // Keep log history and clear its medication reference when this medication is deleted.
     @Relationship(deleteRule: .nullify, inverse: \TakeLog.medication)
     var logs: [TakeLog] = []
     
-    init(name: String, daysOfWeek: Weekdays, presetDose: Int = 0) {
+    init(name: String, daysOfWeek: Weekdays, presetDose: Int = 0, reminderTime: Date? = nil) {
         self.name = name
         self.daysOfWeek = daysOfWeek
         self.presetDose = presetDose
+        if let reminderTime {
+            self.reminderTime = reminderTime
+        }
     }
     
     @MainActor func isDueToday() -> Bool{
